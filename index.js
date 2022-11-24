@@ -20,6 +20,7 @@ async function run(){
     try {
         const productsCollection=client.db('recycle-laptop').collection('products');
         const categoryCollection=client.db('recycle-laptop').collection('categories');
+        const usersCollection=client.db('recycle-laptop').collection('users')
 
         //get all categories
         app.get('/categories', async(req, res)=>{
@@ -34,6 +35,21 @@ async function run(){
             const query={categoryId:id};
             const cursor=await productsCollection.find(query).toArray();
             res.send(cursor)
+        })
+        //store user info in the database
+        app.post('/users', async(req, res)=>{
+            const user=req.body;
+            const result=await usersCollection.insertOne(user);
+            res.send(result)
+        })
+        //get a user info 
+        app.get('/user', async(req, res)=>{
+            const email=req.query.email;
+            const query={
+                user_email:email,
+            };
+            const result=await usersCollection.findOne(query);
+            res.send(result)
         })
     } catch (error) {
         console.log(error);
