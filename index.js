@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const app = express();
@@ -34,21 +34,49 @@ async function run() {
       res.send(result);
     });
     //get advertised products
-    app.get('/advertised/products', async(req, res)=>{
-        const query={
-            isAdvertised:true
-        };
-        const products=await productsCollection.find(query).toArray();
-        res.send(products)
-    })
-    //get seller product
-    app.get("/products", async (req, res) => {
-      const email = req.query.email;
+    app.get("/advertised/products", async (req, res) => {
       const query = {
-        sellerEmail: email,
+        isAdvertised: true,
       };
       const products = await productsCollection.find(query).toArray();
       res.send(products);
+    });
+    //get seller product
+    app.get("/products", async (req, res) => {
+      const email = req.query.email;
+      let query;
+      if (email) {
+        query = {
+          sellerEmail: email,
+        };
+      }
+      const products = await productsCollection.find(query).toArray();
+      res.send(products);
+    });
+    //delete a product
+    app.delete("/product/delete/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: ObjectId(id) };
+      const result = await productsCollection.deleteOne(query);
+      res.send(result);
+    });
+    //get a single product to set it is advertised by seller
+    app.put("/advertised/product/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          isAdvertised: true,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      res.send(result);
     });
     //get all categories
     app.get("/categories", async (req, res) => {
