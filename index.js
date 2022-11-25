@@ -33,11 +33,17 @@ async function run() {
       const result = await productsCollection.insertOne(product);
       res.send(result);
     });
-
+    //get advertised products
+    app.get('/advertised/products', async(req, res)=>{
+        const query={
+            isAdvertised:true
+        };
+        const products=await productsCollection.find(query).toArray();
+        res.send(products)
+    })
     //get seller product
     app.get("/products", async (req, res) => {
       const email = req.query.email;
-      console.log(email);
       const query = {
         sellerEmail: email,
       };
