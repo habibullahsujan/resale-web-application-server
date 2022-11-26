@@ -29,6 +29,8 @@ async function run() {
     const soldProductsCollection = client
       .db("recycle-laptop")
       .collection("soldProducts");
+      const wishlistCollection= client.db("recycle-laptop").collection("wishlistProducts");
+      const reportedProductsCollection= client.db("recycle-laptop").collection("reportedProducts");
 
     //store new product info
     app.post("/product", async (req, res) => {
@@ -81,6 +83,19 @@ async function run() {
       );
       res.send(result);
     });
+    //update report product status
+    app.post('/report-product', async(req, res)=>{
+      const data = req.body;
+      const result = await reportedProductsCollection.insertOne(data);
+      res.send(result);
+    })
+    //add product wishlist
+    app.post('/wishlist-product', async(req, res)=>{
+      const data = req.body;
+      const result = await wishlistCollection.insertOne(data);
+      res.send(result);
+    
+    })
     //store sold product
     app.post("/sold-product", async (req, res) => {
       const data = req.body;
@@ -90,7 +105,6 @@ async function run() {
     //update sold product status
     app.put("/sold-product/:id", async (req, res) => {
       const id = req.params.id;
-
       const filter = { _id: ObjectId(id) };
       const options = { upsert: true };
       const updateDoc = {
@@ -146,6 +160,13 @@ async function run() {
         const query={user_role:'seller'}
         const result=await usersCollection.find(query).toArray();
         res.send(result)
+    })
+
+    //get all reported products
+    app.get('/reported-products', async(req, res)=>{
+      const query={};
+      const result=await reportedProductsCollection.find(query).toArray();
+      res.send(result)
     })
   } catch (error) {
     console.log(error);
