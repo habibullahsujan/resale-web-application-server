@@ -64,6 +64,16 @@ async function run() {
       }
       next();
     };
+    //verify seller 
+    const verifySeller = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { user_email: email };
+      const adminEmail = await usersCollection.findOne(query);
+      if (adminEmail?.user_role !== "seller") {
+        return res.status(403).send("forbidden access");
+      }
+      next();
+    };
     //store new product info
     app.post("/product", async (req, res) => {
       const product = req.body;
@@ -179,8 +189,34 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
-    //get a user info
+    //get a user info //buyer info
     app.get("/user",verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      const verifyEmail = req.decoded.email;
+      if (verifyEmail !== email) {
+        return res.status(401).send("unauthorized access");
+      }
+      const query = {
+        user_email: email,
+      };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
+    ///get seller info
+    app.get("/user-seller",verifyJWT,verifySeller, async (req, res) => {
+      const email = req.query.email;
+      const verifyEmail = req.decoded.email;
+      if (verifyEmail !== email) {
+        return res.status(401).send("unauthorized access");
+      }
+      const query = {
+        user_email: email,
+      };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
+    //get admin info
+    app.get("/user-admin",verifyJWT,verifyAdmin, async (req, res) => {
       const email = req.query.email;
       const verifyEmail = req.decoded.email;
       if (verifyEmail !== email) {
@@ -376,6 +412,38 @@ async function run() {
       const result = await reportedProductsCollection.deleteOne(query);
       res.send(result);
     });
+
+    app.put('/verify-seller/:id', async(req, res)=>{
+      const id=req.params.id;
+      const filter={_id:ObjectId(id)};
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          sellerIsVerified: true,
+        },
+      };
+      const result= await usersCollection.updateOne(filter,updateDoc, options);
+      res.send(result)
+    })
+    //get a user data 
+    app.get('/userData', async(req, res)=>{
+      const email=req.query.email
+      const query={user_email:email};
+      const result=await usersCollection.findOne(query);
+      res.send(result)
+    })
+    ///
+    app.get('/my-buyer',verifyJWT,verifySeller, async(req, res)=>{
+      const email=req.query.email;
+      const verifyEmail = req.decoded.email;
+      if (verifyEmail !== email) {
+        return res.status(401).send("unauthorized access");
+      }
+      const query={sellerEmail:email};
+      const result=await soldProductsCollection.find(query).toArray();
+      res.send(result)
+    })
+
   } catch (error) {
     console.log(error);
   }
